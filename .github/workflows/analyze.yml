@@ -93,9 +93,26 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Generate sample data
+    - name: Check for sample data
       run: |
-        python generate_sample_data.py
+        # Проверяем наличие файла generate_sample_data.py
+        if [ -f "generate_sample_data.py" ]; then
+          python generate_sample_data.py
+        else
+          echo "⚠️ generate_sample_data.py not found, creating minimal sample..."
+          mkdir -p data
+          cat > data/sample_log.csv << 'EOF'
+student_id,event_type,event_time,module,course,grade,activity_duration
+1001,login,2024-01-15 09:30:00,module_1,course_101,,0
+1001,assignment_submit,2024-01-15 11:45:00,module_1,course_101,85,120
+1001,forum_post,2024-01-16 14:20:00,module_1,course_101,,15
+1002,login,2024-01-15 09:35:00,module_1,course_101,,0
+1002,quiz_attempt,2024-01-17 10:15:00,module_1,course_101,92,45
+1003,login,2024-01-15 10:00:00,module_1,course_101,,0
+1003,assignment_submit,2024-01-16 14:00:00,module_1,course_101,78,90
+EOF
+          echo "✅ Created minimal sample data"
+        fi
     
     - name: Run analysis
       run: |
@@ -143,22 +160,39 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [test, analyze]
+    # Добавляем permissions для записи в репозиторий
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    # Условие только для main ветки и пуша (не PR)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    # Добавляем environment для GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./reports
-        publish_branch: gh-pages
+        # Загружаем отчеты как артефакт для Pages
+        path: './reports'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
   
   notify:
     runs-on: ubuntu-latest
-    needs: [test, analyze]
+    needs: [test, analyze, deploy]
     if: always()
     
     steps:
@@ -170,14 +204,13 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Test Job**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Analysis Job**: ${{ needs.analyze.result }}" >> $GITHUB_STEP_SUMMARY
-        if ${{ needs.deploy.result && 'deploy' }}; then
-          echo "- **Deploy Job**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "- **Deploy Job**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## 📁 Artifacts Generated" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ Test coverage reports" >> $GITHUB_STEP_SUMMARY
         echo "✅ Analysis reports and visualizations" >> $GITHUB_STEP_SUMMARY
-        if ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}; then
+        if ${{ needs.deploy.result == 'success' }}; then
           echo "✅ Reports deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 URL: https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')/" >> $GITHUB_STEP_SUMMARY
         fi
