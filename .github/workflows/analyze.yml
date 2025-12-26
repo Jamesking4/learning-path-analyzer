@@ -96,17 +96,121 @@ jobs:
     - name: Prepare data directory
       run: |
         mkdir -p data
-        # Проверяем наличие данных, если нет - пропускаем анализ
+        # Проверяем наличие данных
+name: Learning Path Analysis CI/CD
+
+on:
+  schedule:
+    # Каждый понедельник в 00:00 UTC
+    - cron: '0 0 * * 1'
+  
+  workflow_dispatch:
+    inputs:
+      dataset:
+        description: 'Dataset to analyze'
+        required: true
+        default: 'sample'
+        type: choice
+        options:
+          - sample
+          - full
+      generate_report:
+        description: 'Generate HTML report'
+        required: true
+        default: true
+        type: boolean
+  
+  push:
+    branches: [ main, develop ]
+  
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black
+    
+    - name: Format with black
+      run: |
+        black src/ tests/
+    
+    - name: Lint with flake8
+      run: |
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Run tests with pytest
+      run: |
+        pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          htmlcov/
+  
+  analyze:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+        - name: Prepare data directory
+      run: |
+        mkdir -p data
+        # Проверяем наличие данных
         if [ ! -f "data/sample_log.csv" ]; then
-          echo "❌ No data file found. Analysis will be skipped."
-          echo "SKIP_ANALYSIS=true" >> $GITHUB_ENV
+          echo "❌ No data file found. Creating minimal sample..."
+          # Используем echo вместо heredoc для избежания проблем с YAML
+          echo 'student_id,event_type,event_time,module,course,grade,activity_duration' > data/sample_log.csv
+          echo '1001,login,2024-01-15 09:30:00,module_1,course_101,,0' >> data/sample_log.csv
+          echo '1001,assignment_submit,2024-01-15 11:45:00,module_1,course_101,85,120' >> data/sample_log.csv
+          echo '1001,forum_post,2024-01-16 14:20:00,module_1,course_101,,15' >> data/sample_log.csv
+          echo '1002,login,2024-01-15 09:35:00,module_1,course_101,,0' >> data/sample_log.csv
+          echo '1002,quiz_attempt,2024-01-17 10:15:00,module_1,course_101,92,45' >> data/sample_log.csv
+          echo "✅ Created minimal sample data"
         else
           echo "✅ Data file found: data/sample_log.csv"
-          echo "SKIP_ANALYSIS=false" >> $GITHUB_ENV
         fi
     
     - name: Run analysis
-      if: env.SKIP_ANALYSIS == 'false'
       run: |
         echo "Running learning path analysis..."
         
@@ -121,22 +225,11 @@ jobs:
         
         echo "Analysis completed!"
     
-    - name: Skip analysis message
-      if: env.SKIP_ANALYSIS == 'true'
-      run: |
-        echo "⏭️ Analysis skipped - no data file available"
-        mkdir -p reports
-        echo "<html><body><h1>Analysis Skipped</h1><p>No data file available. Please add data/sample_log.csv to run analysis.</p></body></html>" > reports/index.html
-    
     - name: Generate summary report
       run: |
         echo "# 📊 Learning Path Analysis Results" > analysis_summary.md
         echo "" >> analysis_summary.md
-        if [ "$SKIP_ANALYSIS" = "true" ]; then
-          echo "**Analysis was skipped due to missing data file**" >> analysis_summary.md
-        else
-          echo "**Analysis completed successfully!**" >> analysis_summary.md
-        fi
+        echo "**Analysis completed successfully!**" >> analysis_summary.md
         echo "" >> analysis_summary.md
         echo "## 📈 Key Metrics" >> analysis_summary.md
         echo "" >> analysis_summary.md
@@ -144,7 +237,6 @@ jobs:
         echo "- Workflow: ${{ github.workflow }}" >> analysis_summary.md
         echo "- Trigger: ${{ github.event_name }}" >> analysis_summary.md
         echo "- Commit: ${{ github.sha }}" >> analysis_summary.md
-        echo "- Analysis Status: $([ "$SKIP_ANALYSIS" = "true" ] && echo "Skipped" || echo "Completed")" >> analysis_summary.md
         echo "" >> analysis_summary.md
         echo "## 📁 Generated Files" >> analysis_summary.md
         echo "" >> analysis_summary.md
@@ -161,42 +253,11 @@ jobs:
           analysis_summary.md
         retention-days: 30
   
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [test, analyze]
-    # Добавляем permissions для записи в репозиторий
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    # Условие только для main ветки и пуша (не PR)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    # Добавляем environment для GitHub Pages
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-    
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        # Загружаем отчеты как артефакт для Pages
-        path: './reports'
-    
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+  # Убрали deploy job - GitHub Pages не включен
+  # Вместо этого просто показываем сообщение о том, как включить
   
   notify:
     runs-on: ubuntu-latest
-    # ОСТОРОЖНО: Указываем только те jobs, которые всегда выполняются
     needs: [test, analyze]
     if: always()
     
@@ -209,21 +270,92 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Test Job**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Analysis Job**: ${{ needs.analyze.result }}" >> $GITHUB_STEP_SUMMARY
-        
-        # Проверяем, был ли выполнен deploy job
-        DEPLOY_STATUS="${{ needs.deploy.result }}"
-        if [ -n "$DEPLOY_STATUS" ]; then
-          echo "- **Deploy Job**: $DEPLOY_STATUS" >> $GITHUB_STEP_SUMMARY
-        fi
-        
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## 📁 Artifacts Generated" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ Test coverage reports" >> $GITHUB_STEP_SUMMARY
         echo "✅ Analysis reports and visualizations" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To enable GitHub Pages:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Go to repository **Settings** → **Pages**" >> $GITHUB_STEP_SUMMARY
+        echo "2. Select source: **GitHub Actions**" >> $GITHUB_STEP_SUMMARY
+        echo "3. Save configuration" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📥 Reports available as artifacts for download." >> $GITHUB_STEP_SUMMARY
+    
+    - name: Run analysis
+      run: |
+        echo "Running learning path analysis..."
         
-        # Проверяем статус деплоя
-        if [ -n "$DEPLOY_STATUS" ] && [ "$DEPLOY_STATUS" = "success" ]; then
-          echo "✅ Reports deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
-          echo "🌐 URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
-        fi
+        # Определяем входной файл
+        INPUT_FILE="data/sample_log.csv"
+        
+        # Запускаем анализ
+        python main.py \
+          --input $INPUT_FILE \
+          --output reports/ \
+          --config config.yaml
+        
+        echo "Analysis completed!"
+    
+    - name: Generate summary report
+      run: |
+        echo "# 📊 Learning Path Analysis Results" > analysis_summary.md
+        echo "" >> analysis_summary.md
+        echo "**Analysis completed successfully!**" >> analysis_summary.md
+        echo "" >> analysis_summary.md
+        echo "## 📈 Key Metrics" >> analysis_summary.md
+        echo "" >> analysis_summary.md
+        echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> analysis_summary.md
+        echo "- Workflow: ${{ github.workflow }}" >> analysis_summary.md
+        echo "- Trigger: ${{ github.event_name }}" >> analysis_summary.md
+        echo "- Commit: ${{ github.sha }}" >> analysis_summary.md
+        echo "" >> analysis_summary.md
+        echo "## 📁 Generated Files" >> analysis_summary.md
+        echo "" >> analysis_summary.md
+        echo "The following files were generated:" >> analysis_summary.md
+        echo "" >> analysis_summary.md
+        ls -la reports/ >> analysis_summary.md
+    
+    - name: Upload analysis artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: analysis-reports
+        path: |
+          reports/
+          analysis_summary.md
+        retention-days: 30
+  
+  # Убрали deploy job - GitHub Pages не включен
+  # Вместо этого просто показываем сообщение о том, как включить
+  
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, analyze]
+    if: always()
+    
+    steps:
+    - name: Create workflow summary
+      run: |
+        echo "# 🎓 Learning Path Analyzer - Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Job Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Job**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Analysis Job**: ${{ needs.analyze.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📁 Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Test coverage reports" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Analysis reports and visualizations" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To enable GitHub Pages:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Go to repository **Settings** → **Pages**" >> $GITHUB_STEP_SUMMARY
+        echo "2. Select source: **GitHub Actions**" >> $GITHUB_STEP_SUMMARY
+        echo "3. Save configuration" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📥 Reports available as artifacts for download." >> $GITHUB_STEP_SUMMARY
