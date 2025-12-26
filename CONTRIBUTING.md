@@ -1,6 +1,3 @@
-cat > CONTRIBUTING.md << 'EOF'
-# Contributing to Learning Path Analyzer
-
 Thank you for your interest in contributing!
 
 ## How to Contribute
