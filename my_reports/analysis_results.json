@@ -1,0 +1,252 @@
+{
+  "basic_stats": {
+    "total_students": 5,
+    "total_events": 27,
+    "time_range": {
+      "start": "2024-01-15",
+      "end": "2024-01-19"
+    },
+    "event_distribution": {
+      "assessment": 11,
+      "login": 8,
+      "social": 4,
+      "content_interaction": 4
+    },
+    "avg_events_per_student": 5.4,
+    "grade_stats": {
+      "mean": 83.0,
+      "median": 85.0,
+      "std": 9.50789145920377,
+      "min": 65.0,
+      "max": 95.0
+    }
+  },
+  "correlation_matrix": {
+    "student_id": {
+      "student_id": 1.0,
+      "event_time_count": -0.7833494518006402,
+      "grade_mean": 0.5232787535346256,
+      "grade_max": -0.4222203716000601,
+      "grade_min": NaN,
+      "grade_std": 0.03444464614748234,
+      "event_assessment_sum": -0.7071067811865476,
+      "event_content_interaction_sum": -0.35355339059327373,
+      "event_login_sum": -0.8660254037844387,
+      "event_social_sum": -0.566946709513841,
+      "activity_days": -0.3535533905932738
+    },
+    "event_time_count": {
+      "student_id": -0.7833494518006402,
+      "event_time_count": 1.0,
+      "grade_mean": -0.7825748764608114,
+      "grade_max": 0.7180299875600025,
+      "grade_min": NaN,
+      "grade_std": 0.23576813939190294,
+      "event_assessment_sum": 0.8000946913656627,
+      "event_content_interaction_sum": 0.7385489458759964,
+      "event_login_sum": 0.7035264706814486,
+      "event_social_sum": 0.888234788195688,
+      "activity_days": 0.7385489458759965
+    },
+    "grade_mean": {
+      "student_id": 0.5232787535346256,
+      "event_time_count": -0.7825748764608114,
+      "grade_mean": 1.0,
+      "grade_max": -0.6865643414094375,
+      "grade_min": NaN,
+      "grade_std": -0.24218962448157283,
+      "event_assessment_sum": -0.28401071146310947,
+      "event_content_interaction_sum": -0.8410317195087149,
+      "event_login_sum": -0.6035303778206371,
+      "event_social_sum": -0.7026944872856068,
+      "activity_days": -0.8410317195087151
+    },
+    "grade_max": {
+      "student_id": -0.4222203716000601,
+      "event_time_count": 0.7180299875600025,
+      "grade_mean": -0.6865643414094375,
+      "grade_max": 1.0,
+      "grade_min": NaN,
+      "grade_std": 0.8306512691979904,
+      "event_assessment_sum": 0.31003776821787216,
+      "event_content_interaction_sum": 0.9530790652623476,
+      "event_login_sum": 0.7125556705864818,
+      "event_social_sum": 0.4173743237192008,
+      "activity_days": 0.9530790652623476
+    },
+    "grade_min": {
+      "student_id": NaN,
+      "event_time_count": NaN,
+      "grade_mean": NaN,
+      "grade_max": NaN,
+      "grade_min": NaN,
+      "grade_std": NaN,
+      "event_assessment_sum": NaN,
+      "event_content_interaction_sum": NaN,
+      "event_login_sum": NaN,
+      "event_social_sum": NaN,
+      "activity_days": NaN
+    },
+    "grade_std": {
+      "student_id": 0.03444464614748234,
+      "event_time_count": 0.23576813939190294,
+      "grade_mean": -0.24218962448157283,
+      "grade_max": 0.8306512691979904,
+      "grade_min": NaN,
+      "grade_std": 1.0,
+      "event_assessment_sum": -0.08070668824358584,
+      "event_content_interaction_sum": 0.7129829931448636,
+      "event_login_sum": 0.3995801044841002,
+      "event_social_sum": -0.0876431282314568,
+      "activity_days": 0.7129829931448637
+    },
+    "event_assessment_sum": {
+      "student_id": -0.7071067811865476,
+      "event_time_count": 0.8000946913656627,
+      "grade_mean": -0.28401071146310947,
+      "grade_max": 0.31003776821787216,
+      "grade_min": NaN,
+      "grade_std": -0.08070668824358584,
+      "event_assessment_sum": 1.0,
+      "event_content_interaction_sum": 0.25,
+      "event_login_sum": 0.40824829046386296,
+      "event_social_sum": 0.801783725737273,
+      "activity_days": 0.25
+    },
+    "event_content_interaction_sum": {
+      "student_id": -0.35355339059327373,
+      "event_time_count": 0.7385489458759964,
+      "grade_mean": -0.8410317195087149,
+      "grade_max": 0.9530790652623476,
+      "grade_min": NaN,
+      "grade_std": 0.7129829931448636,
+      "event_assessment_sum": 0.25,
+      "event_content_interaction_sum": 1.0,
+      "event_login_sum": 0.6123724356957946,
+      "event_social_sum": 0.5345224838248488,
+      "activity_days": 1.0000000000000002
+    },
+    "event_login_sum": {
+      "student_id": -0.8660254037844387,
+      "event_time_count": 0.7035264706814486,
+      "grade_mean": -0.6035303778206371,
+      "grade_max": 0.7125556705864818,
+      "grade_min": NaN,
+      "grade_std": 0.3995801044841002,
+      "event_assessment_sum": 0.40824829046386296,
+      "event_content_interaction_sum": 0.6123724356957946,
+      "event_login_sum": 1.0,
+      "event_social_sum": 0.32732683535398854,
+      "activity_days": 0.6123724356957945
+    },
+    "event_social_sum": {
+      "student_id": -0.566946709513841,
+      "event_time_count": 0.888234788195688,
+      "grade_mean": -0.7026944872856068,
+      "grade_max": 0.4173743237192008,
+      "grade_min": NaN,
+      "grade_std": -0.0876431282314568,
+      "event_assessment_sum": 0.801783725737273,
+      "event_content_interaction_sum": 0.5345224838248488,
+      "event_login_sum": 0.32732683535398854,
+      "event_social_sum": 1.0,
+      "activity_days": 0.5345224838248488
+    },
+    "activity_days": {
+      "student_id": -0.3535533905932738,
+      "event_time_count": 0.7385489458759965,
+      "grade_mean": -0.8410317195087151,
+      "grade_max": 0.9530790652623476,
+      "grade_min": NaN,
+      "grade_std": 0.7129829931448637,
+      "event_assessment_sum": 0.25,
+      "event_content_interaction_sum": 1.0000000000000002,
+      "event_login_sum": 0.6123724356957945,
+      "event_social_sum": 0.5345224838248488,
+      "activity_days": 1.0
+    }
+  },
+  "clusters": {
+    "student_id": {
+      "0": 1001,
+      "1": 1002,
+      "2": 1003,
+      "3": 1004,
+      "4": 1005
+    },
+    "cluster": {
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 1
+    }
+  },
+  "time_patterns": {
+    "hourly_distribution": {
+      "8": 2,
+      "9": 4,
+      "10": 4,
+      "11": 5,
+      "12": 1,
+      "13": 2,
+      "14": 4,
+      "15": 3,
+      "16": 2
+    },
+    "daily_distribution": {
+      "0": 6,
+      "1": 5,
+      "2": 6,
+      "3": 6,
+      "4": 4
+    },
+    "event_by_hour": {
+      "assessment": {
+        "8": 0,
+        "9": 1,
+        "10": 3,
+        "11": 3,
+        "12": 1,
+        "13": 1,
+        "14": 1,
+        "15": 0,
+        "16": 1
+      },
+      "content_interaction": {
+        "8": 0,
+        "9": 0,
+        "10": 0,
+        "11": 0,
+        "12": 0,
+        "13": 0,
+        "14": 1,
+        "15": 2,
+        "16": 1
+      },
+      "login": {
+        "8": 2,
+        "9": 3,
+        "10": 1,
+        "11": 1,
+        "12": 0,
+        "13": 0,
+        "14": 1,
+        "15": 0,
+        "16": 0
+      },
+      "social": {
+        "8": 0,
+        "9": 0,
+        "10": 0,
+        "11": 1,
+        "12": 0,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "16": 0
+      }
+    }
+  },
+  "timestamp": "2025-12-23T14:33:04.698139"
+}

@@ -1,0 +1,45 @@
+# Конфигурация анализа данных
+data:
+  input_path: "data/raw"
+  output_path: "data/processed"
+  reports_path: "reports"
+  sample_size: 1000  # размер выборки для анализа
+
+# Параметры анализа
+analysis:
+  min_grade_threshold: 60
+  correlation_threshold: 0.3
+  top_n_recommendations: 5
+  clustering_n_clusters: 4
+  time_windows: ["daily", "weekly", "monthly"]
+
+# Настройки визуализации
+visualization:
+  theme: "plotly_white"
+  style: "seaborn"
+  dpi: 300
+  colors:
+    - "#1f77b4"  # синий
+    - "#ff7f0e"  # оранжевый
+    - "#2ca02c"  # зеленый
+    - "#d62728"  # красный
+    - "#9467bd"  # фиолетовый
+    - "#8c564b"  # коричневый
+    - "#e377c2"  # розовый
+    - "#7f7f7f"  # серый
+
+# Настройки отчетов
+report:
+  format: "html"
+  include_summary: true
+  include_visualizations: true
+  include_recommendations: true
+  auto_open_browser: false
+
+# Настройки событий LMS
+events:
+  login_events: ["login", "logout", "session_start"]
+  content_events: ["view", "download", "read"]
+  assessment_events: ["assignment_submit", "quiz_attempt", "exam_start"]
+  social_events: ["forum_post", "forum_reply", "comment"]
+  important_events: ["course_complete", "certificate_earned"]
