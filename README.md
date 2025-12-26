@@ -2,8 +2,8 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI/CD](https://github.com/yourusername/learning-path-analyzer/actions/workflows/analyze.yml/badge.svg)](https://github.com/yourusername/learning-path-analyzer/actions)
-[![Code Coverage](https://codecov.io/gh/yourusername/learning-path-analyzer/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/learning-path-analyzer)
+[![CI/CD](https://github.com/JamesKing4/learning-path-analyzer/actions/workflows/analyze.yml/badge.svg)](https://github.com/JamesKing4/learning-path-analyzer/actions)
+[![Code Coverage](https://codecov.io/gh/JamesKing4/learning-path-analyzer/branch/main/graph/badge.svg)](https://codecov.io/gh/JamesKing4/learning-path-analyzer)
 
 **Система анализа образовательных траекторий студентов на основе логов LMS** (Moodle, Canvas и др.)
 
@@ -50,7 +50,7 @@ learning-path-analyzer/
 ### 1. Клонирование и настройка
 ```bash
 # Клонируйте репозиторий
-git clone https://github.com/yourusername/learning-path-analyzer.git
+git clone https://github.com/JamesKing4/learning-path-analyzer.git
 cd learning-path-analyzer
 
 # Создайте виртуальное окружение (рекомендуется)

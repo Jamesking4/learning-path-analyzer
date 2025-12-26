@@ -2,7 +2,7 @@ name: Learning Path Analysis CI/CD
 
 on:
   schedule:
-    # Запуск каждый понедельник в 00:00 UTC
+    # Каждый понедельник в 00:00 UTC
     - cron: '0 0 * * 1'
   
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11']
     
     steps:
     - name: Checkout repository
@@ -62,20 +62,20 @@ jobs:
       run: |
         pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
     
-    - name: Upload coverage to Codecov
+    - name: Upload test coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
-        fail_ci_if_error: false
+        flags: unittests
+        name: codecov-umbrella
     
     - name: Upload test results
       uses: actions/upload-artifact@v3
-      if: always()
       with:
-        name: test-results-${{ matrix.python-version }}
+        name: test-results-py${{ matrix.python-version }}
         path: |
           htmlcov/
-          test-results.xml
+          .coverage
   
   analyze:
     needs: test
@@ -96,16 +96,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Generate sample data (if needed)
+    - name: Generate sample data
       run: |
         python generate_sample_data.py
     
     - name: Run analysis
-      id: analysis
       run: |
         echo "Running learning path analysis..."
         
-        # Определяем входной файл на основе параметра
+        # Определяем входной файл
         if [ "${{ github.event.inputs.dataset }}" = "full" ]; then
           INPUT_FILE="data/sample_large_log.csv"
         else
@@ -118,8 +117,7 @@ jobs:
           --output reports/ \
           --config config.yaml
         
-        # Сохраняем путь к отчету
-        echo "report_path=reports/analysis_report.html" >> $GITHUB_OUTPUT
+        echo "Analysis completed!"
     
     - name: Generate summary report
       if: ${{ github.event.inputs.generate_report == 'true' || github.event_name == 'schedule' }}
@@ -137,23 +135,10 @@ jobs:
         echo "" >> analysis_summary.md
         echo "## 📁 Generated Files" >> analysis_summary.md
         echo "" >> analysis_summary.md
-        echo "The following files were generated:" >> analysis_summary.md
-        echo "" >> analysis_summary.md
-        ls -la reports/ >> analysis_summary.md
-    
-    - name: Commit and push report
-      if: github.event_name == 'schedule'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # Добавляем сгенерированные отчеты
-        git add reports/
-        git add analysis_summary.md
-        
-        # Коммит и пуш
-        git commit -m "📈 Update analysis reports - $(date -u '+%Y-%m-%d')" || echo "No changes to commit"
-        git push
+        echo "Check the artifacts for:" >> analysis_summary.md
+        echo "- HTML report" >> analysis_summary.md
+        echo "- Visualizations (PNG)" >> analysis_summary.md
+        echo "- Analysis results (JSON)" >> analysis_summary.md
     
     - name: Upload analysis artifacts
       uses: actions/upload-artifact@v3
@@ -164,14 +149,13 @@ jobs:
           analysis_summary.md
         retention-days: 30
     
-    - name: Deploy to GitHub Pages (optional)
-      if: github.ref == 'refs/heads/main'
+    - name: Deploy reports to GitHub Pages
+      if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./reports
         destination_dir: ./reports
-        keep_files: false
   
   notify:
     needs: [test, analyze]
@@ -179,24 +163,17 @@ jobs:
     if: always()
     
     steps:
-    - name: Check workflow status
-      id: check
-      run: |
-        if [ "${{ needs.test.result }}" = "success" ] && [ "${{ needs.analyze.result }}" = "success" ]; then
-          echo "status=✅ All checks passed" >> $GITHUB_OUTPUT
-        elif [ "${{ needs.test.result }}" = "failure" ] || [ "${{ needs.analyze.result }}" = "failure" ]; then
-          echo "status=❌ Some checks failed" >> $GITHUB_OUTPUT
-        else
-          echo "status=⚠️ Workflow completed with warnings" >> $GITHUB_OUTPUT
-        fi
-    
     - name: Create workflow summary
       run: |
         echo "# Workflow Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "${{ steps.check.outputs.status }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Test Job**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Analysis Job**: ${{ needs.analyze.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download artifacts for detailed reports" >> $GITHUB_STEP_SUMMARY
+        echo "2. Check the generated visualizations" >> $GITHUB_STEP_SUMMARY
+        echo "3. Review analysis results" >> $GITHUB_STEP_SUMMARY
