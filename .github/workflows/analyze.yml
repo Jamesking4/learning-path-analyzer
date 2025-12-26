@@ -93,28 +93,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Check for sample data
+    - name: Prepare data directory
       run: |
-        # Проверяем наличие файла generate_sample_data.py
-        if [ -f "generate_sample_data.py" ]; then
-          python generate_sample_data.py
+        mkdir -p data
+        # Проверяем наличие данных, если нет - пропускаем анализ
+        if [ ! -f "data/sample_log.csv" ]; then
+          echo "❌ No data file found. Analysis will be skipped."
+          echo "SKIP_ANALYSIS=true" >> $GITHUB_ENV
         else
-          echo "⚠️ generate_sample_data.py not found, creating minimal sample..."
-          mkdir -p data
-          cat > data/sample_log.csv << 'EOF'
-student_id,event_type,event_time,module,course,grade,activity_duration
-1001,login,2024-01-15 09:30:00,module_1,course_101,,0
-1001,assignment_submit,2024-01-15 11:45:00,module_1,course_101,85,120
-1001,forum_post,2024-01-16 14:20:00,module_1,course_101,,15
-1002,login,2024-01-15 09:35:00,module_1,course_101,,0
-1002,quiz_attempt,2024-01-17 10:15:00,module_1,course_101,92,45
-1003,login,2024-01-15 10:00:00,module_1,course_101,,0
-1003,assignment_submit,2024-01-16 14:00:00,module_1,course_101,78,90
-EOF
-          echo "✅ Created minimal sample data"
+          echo "✅ Data file found: data/sample_log.csv"
+          echo "SKIP_ANALYSIS=false" >> $GITHUB_ENV
         fi
     
     - name: Run analysis
+      if: env.SKIP_ANALYSIS == 'false'
       run: |
         echo "Running learning path analysis..."
         
@@ -129,11 +121,22 @@ EOF
         
         echo "Analysis completed!"
     
+    - name: Skip analysis message
+      if: env.SKIP_ANALYSIS == 'true'
+      run: |
+        echo "⏭️ Analysis skipped - no data file available"
+        mkdir -p reports
+        echo "<html><body><h1>Analysis Skipped</h1><p>No data file available. Please add data/sample_log.csv to run analysis.</p></body></html>" > reports/index.html
+    
     - name: Generate summary report
       run: |
         echo "# 📊 Learning Path Analysis Results" > analysis_summary.md
         echo "" >> analysis_summary.md
-        echo "**Analysis completed successfully!**" >> analysis_summary.md
+        if [ "$SKIP_ANALYSIS" = "true" ]; then
+          echo "**Analysis was skipped due to missing data file**" >> analysis_summary.md
+        else
+          echo "**Analysis completed successfully!**" >> analysis_summary.md
+        fi
         echo "" >> analysis_summary.md
         echo "## 📈 Key Metrics" >> analysis_summary.md
         echo "" >> analysis_summary.md
@@ -141,6 +144,7 @@ EOF
         echo "- Workflow: ${{ github.workflow }}" >> analysis_summary.md
         echo "- Trigger: ${{ github.event_name }}" >> analysis_summary.md
         echo "- Commit: ${{ github.sha }}" >> analysis_summary.md
+        echo "- Analysis Status: $([ "$SKIP_ANALYSIS" = "true" ] && echo "Skipped" || echo "Completed")" >> analysis_summary.md
         echo "" >> analysis_summary.md
         echo "## 📁 Generated Files" >> analysis_summary.md
         echo "" >> analysis_summary.md
@@ -192,7 +196,8 @@ EOF
   
   notify:
     runs-on: ubuntu-latest
-    needs: [test, analyze, deploy]
+    # ОСТОРОЖНО: Указываем только те jobs, которые всегда выполняются
+    needs: [test, analyze]
     if: always()
     
     steps:
@@ -204,13 +209,21 @@ EOF
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Test Job**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Analysis Job**: ${{ needs.analyze.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Deploy Job**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+        
+        # Проверяем, был ли выполнен deploy job
+        DEPLOY_STATUS="${{ needs.deploy.result }}"
+        if [ -n "$DEPLOY_STATUS" ]; then
+          echo "- **Deploy Job**: $DEPLOY_STATUS" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## 📁 Artifacts Generated" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ Test coverage reports" >> $GITHUB_STEP_SUMMARY
         echo "✅ Analysis reports and visualizations" >> $GITHUB_STEP_SUMMARY
-        if ${{ needs.deploy.result == 'success' }}; then
+        
+        # Проверяем статус деплоя
+        if [ -n "$DEPLOY_STATUS" ] && [ "$DEPLOY_STATUS" = "success" ]; then
           echo "✅ Reports deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
-          echo "🌐 URL: https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')/" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
         fi
