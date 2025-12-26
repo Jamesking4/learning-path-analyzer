@@ -36,10 +36,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -63,14 +63,14 @@ jobs:
         pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
     
     - name: Upload test coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
     
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results-py${{ matrix.python-version }}
         path: |
@@ -84,10 +84,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     
@@ -141,7 +141,7 @@ jobs:
         echo "- Analysis results (JSON)" >> analysis_summary.md
     
     - name: Upload analysis artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: analysis-reports
         path: |
@@ -151,7 +151,7 @@ jobs:
     
     - name: Deploy reports to GitHub Pages
       if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./reports
